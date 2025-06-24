@@ -1,11 +1,9 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { eq } from "drizzle-orm";
 import NextAuth from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
 import { env } from "@/env.mjs";
-import { db, users } from "@/lib/schema";
-import { stripeServer } from "@/lib/stripe";
+import { db } from "@/lib/schema";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db),
@@ -22,25 +20,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       session.user.id = user.id;
       session.user.stripeCustomerId = user.stripeCustomerId;
       session.user.isActive = user.isActive;
+      // @ts-expect-error role is not defined in the user type
+      session.role =
+        user.id === "3f2483a9-89bc-4f40-a789-c65aea7ab13d" ? "dev" : "user";
 
       return session;
-    },
-  },
-  events: {
-    createUser: async ({ user }) => {
-      if (!user.email || !user.name) return;
-
-      await stripeServer.customers
-        .create({
-          email: user.email,
-          name: user.name,
-        })
-        .then(async (customer) =>
-          db
-            .update(users)
-            .set({ stripeCustomerId: customer.id })
-            .where(eq(users.id, user.id!)),
-        );
     },
   },
 });

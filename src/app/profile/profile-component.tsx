@@ -1,0 +1,198 @@
+"use client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Session } from "next-auth";
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+// Type for developer data
+interface DeveloperData {
+  id?: string;
+  name: string;
+  email: string;
+  bio: string | null;
+  date_of_starting_working: string;
+}
+
+export default function ProfileComponent({
+  session,
+}: {
+  session: Session | null;
+}) {
+  const router = useRouter();
+  const [success, setSuccess] = useState(false);
+  const [form, setForm] = useState<DeveloperData>({
+    name: "",
+    email: session?.user?.email || "",
+    bio: "",
+    date_of_starting_working: "",
+  });
+
+  // Query to fetch developer info
+  const {
+    data: developerData,
+    isLoading: isLoadingDeveloper,
+    error: fetchError,
+  } = useQuery({
+    queryKey: ["developerInfo", session?.user?.email],
+    queryFn: async () => {
+      if (!session?.user?.email) return null;
+
+      const res = await fetch(
+        `/api/developer-info?email=${encodeURIComponent(session.user.email)}`,
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch developer data");
+      }
+
+      return res.json();
+    },
+    enabled: !!session?.user?.email,
+  });
+
+  // Mutation to update developer info
+  const {
+    mutate: updateDeveloper,
+    isPending: isSubmitting,
+    error: submitError,
+  } = useMutation({
+    mutationFn: async (data: DeveloperData) => {
+      const res = await fetch("/api/developer-info", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to save developer profile");
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      setSuccess(true);
+      setTimeout(() => router.push("/"), 1200);
+    },
+  });
+
+  // Update form when developer data is loaded
+  useEffect(() => {
+    if (developerData) {
+      setForm({
+        name: developerData.name || "",
+        email: session?.user?.email || "",
+        bio: developerData.bio || "",
+        date_of_starting_working: developerData.date_of_starting_working || "",
+      });
+    }
+  }, [developerData, session]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate date format
+    if (!form.date_of_starting_working) {
+      return; // Form validation will catch this
+    }
+
+    updateDeveloper(form);
+  };
+
+  // Show loading state if data is being fetched
+  if (isLoadingDeveloper) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center py-8">
+        <p>Loading profile data...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center py-8">
+      <h1 className="mb-6 text-2xl font-bold">Developer Profile</h1>
+      <p className="mb-4 max-w-md text-center text-gray-600 dark:text-gray-300">
+        This form will <span className="font-semibold">create or update</span>{" "}
+        your developer information in the database. If you already exist, your
+        information will be updated.
+      </p>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow dark:bg-gray-800"
+      >
+        <Input
+          name="name"
+          placeholder="Name"
+          value={form.name}
+          onChange={handleChange}
+          required
+          disabled={isSubmitting}
+        />
+        <Input
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          disabled={true} // Email comes from auth session and shouldn't be editable
+          required
+        />
+        <div>
+          <textarea
+            name="bio"
+            placeholder="Bio (Tell us about yourself)"
+            value={form.bio || ""}
+            onChange={handleChange}
+            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            rows={4}
+          />
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium"
+            htmlFor={"date_of_starting_working"}
+          >
+            When did you start working?
+          </label>
+          <Input
+            name="date_of_starting_working"
+            type="date"
+            placeholder="Start date"
+            value={form.date_of_starting_working}
+            onChange={handleChange}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {(fetchError || submitError) && (
+          <p className="text-sm text-red-500">
+            {fetchError instanceof Error
+              ? fetchError.message
+              : submitError instanceof Error
+                ? submitError.message
+                : "An error occurred"}
+          </p>
+        )}
+
+        {success && (
+          <p className="text-sm text-green-500">
+            Profile saved successfully! Redirecting...
+          </p>
+        )}
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save Profile"}
+        </Button>
+      </form>
+    </div>
+  );
+}

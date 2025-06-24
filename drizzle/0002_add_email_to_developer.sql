@@ -1,0 +1,2 @@
+ALTER TABLE developer ADD COLUMN email text NOT NULL UNIQUE;
+

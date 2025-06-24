@@ -81,6 +81,7 @@ export const developers = pgTable("developer", {
     .$defaultFn(() => crypto.randomUUID()),
   bio: text("bio"),
   name: text("name").notNull(),
+  email: text("email").notNull().unique(),
   date_of_starting_working: text("date_of_starting_working").notNull(),
 });
 
