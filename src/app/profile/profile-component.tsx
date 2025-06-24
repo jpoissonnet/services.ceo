@@ -112,7 +112,13 @@ export default function ProfileComponent({
   if (isLoadingDeveloper) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center py-8">
-        <p>Loading profile data...</p>
+        <div className="bg-card w-full max-w-md animate-pulse space-y-4 rounded p-6 shadow">
+          <div className="bg-muted h-8 w-3/4 rounded" />
+          <div className="bg-muted h-10 rounded" />
+          <div className="bg-muted h-24 rounded" />
+          <div className="bg-muted h-10 rounded" />
+          <div className="bg-muted mx-auto h-10 w-1/2 rounded" />
+        </div>
       </div>
     );
   }
@@ -120,49 +126,61 @@ export default function ProfileComponent({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center py-8">
       <h1 className="mb-6 text-2xl font-bold">Developer Profile</h1>
-      <p className="mb-4 max-w-md text-center text-gray-600 dark:text-gray-300">
-        This form will <span className="font-semibold">create or update</span>{" "}
-        your developer information in the database. If you already exist, your
-        information will be updated.
-      </p>
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow dark:bg-gray-800"
+        className="bg-card w-full max-w-md space-y-4 rounded p-6 shadow"
       >
-        <Input
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          disabled={isSubmitting}
-        />
-        <Input
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          disabled={true} // Email comes from auth session and shouldn't be editable
-          required
-        />
         <div>
+          <label htmlFor="name" className="mb-1 block text-sm font-medium">
+            Name
+          </label>
+          <Input
+            id="name"
+            name="name"
+            placeholder="Name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        <div>
+          <label htmlFor="email" className="mb-1 block text-sm font-medium">
+            Email
+          </label>
+          <Input
+            id="email"
+            name="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            disabled={true} // Email comes from auth session and shouldn't be editable
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="bio" className="mb-1 block text-sm font-medium">
+            Bio (Tell us about yourself)
+          </label>
           <textarea
+            id="bio"
             name="bio"
             placeholder="Bio (Tell us about yourself)"
             value={form.bio || ""}
             onChange={handleChange}
-            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             rows={4}
           />
         </div>
         <div>
           <label
+            htmlFor="date_of_starting_working"
             className="mb-1 block text-sm font-medium"
-            htmlFor={"date_of_starting_working"}
           >
             When did you start working?
           </label>
           <Input
+            id="date_of_starting_working"
             name="date_of_starting_working"
             type="date"
             placeholder="Start date"

@@ -5,6 +5,7 @@ import { PropsWithChildren } from "react";
 
 import RootComponent from "@/app/root-component";
 import { AuthControls } from "@/components/auth-controls";
+import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { auth } from "@/lib/auth";
 import { fonts } from "@/lib/fonts";
@@ -15,18 +16,20 @@ const RootLayout = async ({ children }: PropsWithChildren) => {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen font-sans", fonts)}>
-        <header className="w-full border-b">
-          <div className="container flex h-16 items-center justify-between">
-            <Link href="/" className="font-mono text-lg font-bold">
-              services.ceo
-            </Link>
-            <div className="flex items-center gap-2">
-              <ThemeSwitcher />
-              <AuthControls session={session} />
+        <ThemeProvider attribute="class">
+          <header className="w-full border-b">
+            <div className="container flex h-16 items-center justify-between">
+              <Link href="/" className="font-mono text-lg font-bold">
+                services.ceo
+              </Link>
+              <div className="flex items-center gap-2">
+                <ThemeSwitcher />
+                <AuthControls session={session} />
+              </div>
             </div>
-          </div>
-        </header>
-        <RootComponent>{children}</RootComponent>
+          </header>
+          <RootComponent>{children}</RootComponent>
+        </ThemeProvider>
       </body>
     </html>
   );

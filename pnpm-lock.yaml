@@ -41,6 +41,9 @@ importers:
       drizzle-orm:
         specifier: ^0.44.2
         version: 0.44.2(@neondatabase/serverless@1.0.1)(@types/pg@8.15.4)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.29.0(jiti@2.4.2))
       lucide-react:
         specifier: ^0.515.0
         version: 0.515.0(react@19.1.0)
