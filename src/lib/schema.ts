@@ -75,6 +75,15 @@ export const verificationTokens = pgTable(
   ],
 );
 
+export const developers = pgTable("developer", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  bio: text("bio"),
+  name: text("name").notNull(),
+  date_of_starting_working: text("date_of_starting_working").notNull(),
+});
+
 export const authenticators = pgTable(
   "authenticator",
   {
