@@ -271,9 +271,9 @@ const InputPrompt = ({ session }: { session: Session | null }) => {
                           Reviews:
                         </strong>
                         {dev.reviews.slice(0, 3).map((review) => (
-                          <div key={review.id} className="mt-1">
+                          <div key={review.id} className="mt-1 flex">
                             <div className="flex items-center">
-                              <span className="mr-1 text-yellow-500">
+                              <span className="mr-1 inline-flex text-yellow-500">
                                 {/* Render star icons based on the rating */}
                                 {[...Array(review.rating)].map((_, i) => (
                                   <svg

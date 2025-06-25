@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { db, developers, reviews } from "@/lib/schema";
+import { db, reviews, services } from "@/lib/schema";
 
 // Schema for creating a new review
 const createReviewSchema = z.object({
@@ -48,11 +48,21 @@ export async function GET(request: NextRequest) {
       const developerReviews = await db
         .select()
         .from(reviews)
-        .innerJoin(developers, eq(reviews.clientId, developers.id))
-        .where(eq(developers.id, developerId))
+        .innerJoin(services, eq(services.developerId, developerId))
+        .where(eq(services.developerId, developerId))
         .limit(limit);
 
-      return NextResponse.json({ reviews: developerReviews });
+      console.log("👋 developersReviews", developerReviews);
+
+      const result = developerReviews.map((entry) => ({
+        id: entry.review.id,
+        serviceId: entry.review.serviceId,
+        clientId: entry.review.clientId,
+        description: entry.review.description,
+        rating: entry.review.rating,
+      }));
+
+      return NextResponse.json({ reviews: result });
     }
 
     // Get service review (for a specific service)

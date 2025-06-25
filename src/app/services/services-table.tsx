@@ -25,6 +25,7 @@ type Service = {
   developerName?: string;
   developerId?: string;
   clientName?: string;
+  hasReview?: boolean; // Added field to track if the service has been reviewed
 };
 
 export function ServicesTable({ session }: { session: Session }) {
@@ -259,15 +260,18 @@ export function ServicesTable({ session }: { session: Session }) {
                         <TableCell>{service.name}</TableCell>
                         <TableCell>{service.developerName}</TableCell>
                         <TableCell>
-                          {status === "validated" && (
-                            <Button
-                              onClick={() => openReviewDrawer(service)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              Review
-                            </Button>
-                          )}
+                          {status === "validated" &&
+                            (service.hasReview ? (
+                              <span className="text-gray-400">Reviewed</span>
+                            ) : (
+                              <Button
+                                onClick={() => openReviewDrawer(service)}
+                                variant="outline"
+                                size="sm"
+                              >
+                                Review
+                              </Button>
+                            ))}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -330,6 +334,7 @@ export function ServicesTable({ session }: { session: Session }) {
                       <TableHead>Name</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Action</TableHead>
+                      <TableHead>Reviews</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -347,6 +352,42 @@ export function ServicesTable({ session }: { session: Session }) {
                             </button>
                           ) : (
                             <span className="text-gray-400">Validated</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {/* @ts-expect-error reviews property */}
+                          {service.reviews && service.reviews.length > 0 ? (
+                            <div className="max-h-32 space-y-2 overflow-y-auto">
+                              {/* @ts-expect-error reviews property */}
+                              {service.reviews.map((review, idx) => (
+                                <div
+                                  key={idx}
+                                  className="border-b pb-2 last:border-0"
+                                >
+                                  <div className="flex items-center">
+                                    <div className="flex text-yellow-500">
+                                      {[...Array(review.rating)].map((_, i) => (
+                                        <svg
+                                          key={i}
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 fill-current"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path d="M12 .587l3.668 7.431 8.209 1.188-5.934 5.759 1.398 8.165L12 18.896l-7.341 3.86 1.398-8.165-5.934-5.759 8.209-1.188z" />
+                                        </svg>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <p className="text-sm text-gray-700">
+                                    {review.description}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">
+                              No reviews yet
+                            </span>
                           )}
                         </TableCell>
                       </TableRow>

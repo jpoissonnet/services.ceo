@@ -27,6 +27,13 @@ export async function getServicesForUser(userId: string) {
     service.reviews = allReviews
       .filter((reviewItem) => reviewItem.review.serviceId === service.id)
       .map((reviewItem) => reviewItem.review);
+
+    // Check if the current user (client) has already reviewed this service
+    /* @ts-expect-error new property*/
+    service.hasReview = service.reviews.some(
+      /* @ts-expect-error new property*/
+      (review) => review.clientId === userId,
+    );
   });
 
   const asDeveloper = await db
