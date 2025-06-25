@@ -9,11 +9,24 @@ export async function POST(req: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const formData = await req.formData();
-  const serviceId = formData.get("serviceId") as string;
+
+  let serviceId: string | null;
+  const contentType = req.headers.get("content-type");
+
+  if (contentType?.includes("application/json")) {
+    // Handle JSON request
+    const body = await req.json();
+    serviceId = body.serviceId;
+  } else {
+    // Handle form data request for backward compatibility
+    const formData = await req.formData();
+    serviceId = formData.get("serviceId") as string;
+  }
+
   if (!serviceId) {
     return NextResponse.json({ error: "Missing serviceId" }, { status: 400 });
   }
+
   // Only allow if user is the developer of the service
   const updated = await db
     .update(services)
@@ -22,12 +35,14 @@ export async function POST(req: NextRequest) {
     .where(
       and(eq(services.id, serviceId), eq(developers.email, session.user.email)),
     );
+
   if (!updated.rowCount) {
     return NextResponse.json(
       { error: "Service not found or you are not the developer" },
       { status: 404 },
     );
   }
+
   return NextResponse.json(
     { message: "Service validated successfully" },
     { status: 200 },
