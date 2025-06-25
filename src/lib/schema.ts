@@ -120,3 +120,20 @@ export const authenticators = pgTable(
     },
   ],
 );
+
+export const reviews = pgTable("review", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  serviceId: text("service_id")
+    .notNull()
+    .references(() => services.id, { onDelete: "cascade" }),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  description: text("description").notNull(),
+  rating: integer("rating").notNull(), // Rating out of 5
+  createdAt: timestamp("created_at", { mode: "date" }).$defaultFn(
+    () => new Date(),
+  ),
+});

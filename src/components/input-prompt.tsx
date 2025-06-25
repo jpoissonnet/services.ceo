@@ -36,6 +36,13 @@ const InputPrompt = ({ session }: { session: Session | null }) => {
     name: string;
     bio: string;
     daily_rate?: number | null;
+    reviews?: Array<{
+      id: string;
+      description: string;
+      rating: number;
+      serviceName?: string;
+      clientName?: string;
+    }>;
   }
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [devDetails, setDevDetails] = useState<Developer[]>([]);
@@ -51,7 +58,30 @@ const InputPrompt = ({ session }: { session: Session | null }) => {
       body: JSON.stringify({ names }),
     });
     const data = await res.json();
-    setDevDetails(data.developers || []);
+
+    // For each developer, fetch their reviews
+    const devsWithReviews = await Promise.all(
+      (data.developers || []).map(async (dev: Developer) => {
+        try {
+          const reviewsRes = await fetch(
+            `/api/review?developerId=${dev.id}&limit=3`,
+          );
+          if (reviewsRes.ok) {
+            const reviewsData = await reviewsRes.json();
+            return {
+              ...dev,
+              reviews: reviewsData.reviews || [],
+            };
+          }
+          return dev;
+        } catch (error) {
+          console.error("Error fetching developer reviews:", error);
+          return dev;
+        }
+      }),
+    );
+
+    setDevDetails(devsWithReviews);
   };
 
   const handleStepClick = (step: Step) => {
@@ -233,6 +263,44 @@ const InputPrompt = ({ session }: { session: Session | null }) => {
                       <p className="text-xs text-gray-500">
                         Daily Rate: ${dev.daily_rate}
                       </p>
+                    )}
+                    {/* Reviews section */}
+                    {dev.reviews && dev.reviews.length > 0 && (
+                      <div className="mt-2 w-full rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                        <strong className="block text-gray-800">
+                          Reviews:
+                        </strong>
+                        {dev.reviews.slice(0, 3).map((review) => (
+                          <div key={review.id} className="mt-1">
+                            <div className="flex items-center">
+                              <span className="mr-1 text-yellow-500">
+                                {/* Render star icons based on the rating */}
+                                {[...Array(review.rating)].map((_, i) => (
+                                  <svg
+                                    key={i}
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4 fill-current text-yellow-500"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="M12 .587l3.668 7.431 8.209 1.188-5.934 5.759 1.398 8.165L12 18.896l-7.341 3.86 1.398-8.165-5.934-5.759 8.209-1.188z" />
+                                  </svg>
+                                ))}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {review.clientName}
+                              </span>
+                            </div>
+                            <p className="text-gray-600">
+                              {review.description}
+                            </p>
+                          </div>
+                        ))}
+                        {dev.reviews.length > 3 && (
+                          <span className="text-primary mt-2 block cursor-pointer hover:underline">
+                            View all reviews
+                          </span>
+                        )}
+                      </div>
                     )}
                   </label>
                 ))}

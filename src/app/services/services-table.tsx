@@ -1,9 +1,12 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ColumnFiltersState } from "@tanstack/react-table";
 import { Session } from "next-auth";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -17,12 +20,23 @@ type Service = {
   id: string;
   name: string;
   status: string;
+  description: string;
+  duration: string;
   developerName?: string;
+  developerId?: string;
   clientName?: string;
 };
 
 export function ServicesTable({ session }: { session: Session }) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(5);
+  const [existingReview, setExistingReview] = useState<{
+    description: string;
+    rating: number;
+  } | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["services", session?.user?.id],
@@ -58,6 +72,84 @@ export function ServicesTable({ session }: { session: Session }) {
     } catch (error) {
       console.error("Error validating service:", error);
     }
+  };
+
+  // Function to check if a service already has a review
+  const checkServiceReview = async (serviceId: string) => {
+    try {
+      const response = await fetch(`/api/review?serviceId=${serviceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExistingReview(data.review);
+        return data.review;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error checking service review:", error);
+      return null;
+    }
+  };
+
+  // Mutation for submitting reviews
+  const reviewMutation = useMutation({
+    mutationFn: async ({
+      serviceId,
+      description,
+      rating,
+    }: {
+      serviceId: string;
+      description: string;
+      rating: number;
+    }) => {
+      const response = await fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId,
+          clientId: session.user.id,
+          description,
+          rating,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to submit review");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setReviewDrawerOpen(false);
+      setSelectedService(null);
+      setReviewText("");
+      setRating(5);
+      setExistingReview(null);
+      // Refetch the services to update UI
+      refetch();
+    },
+  });
+
+  // Open review drawer for a service
+  const openReviewDrawer = async (service: Service) => {
+    setSelectedService(service);
+    const review = await checkServiceReview(service.id);
+    if (review) {
+      setReviewText(review.description || "");
+      setRating(review.rating || 5);
+    } else {
+      setReviewText("");
+      setRating(5);
+    }
+    setReviewDrawerOpen(true);
+  };
+
+  // Submit review
+  const submitReview = () => {
+    if (!selectedService || !reviewText || rating < 1) return;
+
+    reviewMutation.mutate({
+      serviceId: selectedService.id,
+      description: reviewText,
+      rating,
+    });
   };
 
   // Group and process the data
@@ -158,6 +250,7 @@ export function ServicesTable({ session }: { session: Session }) {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Developer</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -165,6 +258,17 @@ export function ServicesTable({ session }: { session: Session }) {
                       <TableRow key={service.id}>
                         <TableCell>{service.name}</TableCell>
                         <TableCell>{service.developerName}</TableCell>
+                        <TableCell>
+                          {status === "validated" && (
+                            <Button
+                              onClick={() => openReviewDrawer(service)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Review
+                            </Button>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -254,6 +358,79 @@ export function ServicesTable({ session }: { session: Session }) {
           ))
         )}
       </div>
+
+      {/* Review Drawer */}
+      <Drawer
+        open={reviewDrawerOpen}
+        onClose={() => {
+          setReviewDrawerOpen(false);
+          setSelectedService(null);
+          setReviewText("");
+          setRating(5);
+          setExistingReview(null);
+        }}
+      >
+        <div className="p-4">
+          <h3 className="mb-4 text-lg font-semibold">
+            {existingReview ? "Edit" : "Submit"} Review
+          </h3>
+          <div className="mb-4">
+            <label
+              className="mb-2 block text-sm font-medium"
+              htmlFor={"serviceName"}
+            >
+              Service Name
+            </label>
+            <Input
+              value={selectedService?.name}
+              readOnly
+              className="cursor-not-allowed"
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              className="mb-2 block text-sm font-medium"
+              htmlFor={"rating"}
+            >
+              Rating
+            </label>
+            <select
+              value={rating}
+              onChange={(e) => setRating(Number(e.target.value))}
+              className="rounded border px-2 py-1"
+            >
+              {[1, 2, 3, 4, 5].map((star) => (
+                <option key={star} value={star}>
+                  {star} Star{star > 1 ? "s" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor={"reviewText"}
+              className="mb-2 block text-sm font-medium"
+            >
+              Review Description
+            </label>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              className="h-24 rounded border px-3 py-2"
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setReviewDrawerOpen(false)}
+              variant="outline"
+              className="mr-2"
+            >
+              Cancel
+            </Button>
+            <Button onClick={submitReview}>Submit Review</Button>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }
