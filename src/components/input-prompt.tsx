@@ -210,19 +210,6 @@ const InputPrompt = () => {
               </div>
             </div>
 
-            <div className="mb-4">
-              <h5 className="mb-2 font-semibold">Client Information:</h5>
-              <Input
-                placeholder="Client ID or Name"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="w-full"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Enter the client ID or name this service is for
-              </p>
-            </div>
-
             <div className="mt-4 flex justify-end gap-2">
               {!service && (
                 <Button onClick={createService} disabled={!selectedDevId}>

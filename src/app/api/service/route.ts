@@ -1,18 +1,28 @@
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+import { auth } from "@/lib/auth";
 import { db, services } from "@/lib/schema";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, description, duration, developerId, clientId } =
-      await request.json();
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { name, description, duration, developerId } = await request.json();
     if (!name || !description || !duration || !developerId) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
     const [service] = await db
       .insert(services)
-      .values({ name, description, duration, developerId, clientId })
+      .values({
+        name,
+        description,
+        duration,
+        developerId,
+        clientId: session.user.id,
+      })
       .returning();
     return NextResponse.json({ service });
   } catch (error) {

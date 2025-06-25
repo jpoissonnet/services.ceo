@@ -95,7 +95,7 @@ export const services = pgTable("service", {
   duration: text("duration").notNull(),
   status: text("status").notNull().default("pending"),
   developerId: text("developer_id").references(() => developers.id),
-  clientId: text("client_id").references(() => developers.id), // Changed to reference developers table
+  clientId: text("client_id").references(() => users.id), // Changed to reference developers table
 });
 
 export const authenticators = pgTable(
