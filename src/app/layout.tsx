@@ -29,6 +29,12 @@ const RootLayout = async ({ children }: PropsWithChildren) => {
                 >
                   Developers
                 </Link>
+                <Link
+                  href="/services"
+                  className="text-muted-foreground hover:text-foreground text-sm font-medium"
+                >
+                  Services
+                </Link>
               </nav>
               <div className="flex items-center gap-2">
                 <ThemeSwitcher />
