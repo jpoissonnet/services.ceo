@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db, services } from "@/lib/schema";
+import { db, developers, services } from "@/lib/schema";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -18,11 +18,9 @@ export async function POST(req: NextRequest) {
   const updated = await db
     .update(services)
     .set({ status: "validated" })
+    .from(developers)
     .where(
-      and(
-        eq(services.id, serviceId),
-        eq(services.developerId, session.user.id),
-      ),
+      and(eq(services.id, serviceId), eq(developers.email, session.user.email)),
     );
   if (!updated.rowCount) {
     return NextResponse.json(
