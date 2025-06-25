@@ -9,8 +9,10 @@ export async function getServicesForUser(userId: string) {
       id: services.id,
       name: services.name,
       status: services.status,
+      developerName: developers.name,
     })
     .from(services)
+    .innerJoin(developers, eq(services.developerId, developers.id))
     .where(eq(services.clientId, userId));
 
   // As developer
