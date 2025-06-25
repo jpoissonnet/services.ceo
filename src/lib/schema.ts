@@ -83,6 +83,19 @@ export const developers = pgTable("developer", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   date_of_starting_working: text("date_of_starting_working").notNull(),
+  daily_rate: integer("daily_rate"), // New field for daily rate
+});
+
+export const services = pgTable("service", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  duration: text("duration").notNull(),
+  status: text("status").notNull().default("pending"),
+  developerId: text("developer_id").references(() => developers.id),
+  clientId: text("client_id").references(() => developers.id), // Changed to reference developers table
 });
 
 export const authenticators = pgTable(

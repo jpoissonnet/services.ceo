@@ -14,6 +14,7 @@ interface DeveloperData {
   email: string;
   bio: string | null;
   date_of_starting_working: string;
+  daily_rate?: number | null;
 }
 
 export default function ProfileComponent({
@@ -28,6 +29,7 @@ export default function ProfileComponent({
     email: session?.user?.email || "",
     bio: "",
     date_of_starting_working: "",
+    daily_rate: undefined,
   });
 
   // Query to fetch developer info
@@ -36,21 +38,19 @@ export default function ProfileComponent({
     isLoading: isLoadingDeveloper,
     error: fetchError,
   } = useQuery({
-    queryKey: ["developerInfo", session?.user?.email],
+    queryKey: ["developerInfo", session?.user?.name],
     queryFn: async () => {
-      if (!session?.user?.email) return null;
-
-      const res = await fetch(
-        `/api/developer-info?email=${encodeURIComponent(session.user.email)}`,
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch developer data");
-      }
-
-      return res.json();
+      if (!session?.user?.name) return null;
+      const res = await fetch("/api/developer-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names: [session.user.name] }),
+      });
+      if (!res.ok) throw new Error("Failed to fetch developer data");
+      const data = await res.json();
+      return data.developers?.[0] || null;
     },
-    enabled: !!session?.user?.email,
+    enabled: !!session?.user?.name,
   });
 
   // Mutation to update developer info
@@ -60,12 +60,11 @@ export default function ProfileComponent({
     error: submitError,
   } = useMutation({
     mutationFn: async (data: DeveloperData) => {
-      const res = await fetch("/api/developer-info", {
-        method: "PUT",
+      const res = await fetch("/api/developer", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to save developer profile");
@@ -87,6 +86,7 @@ export default function ProfileComponent({
         email: session?.user?.email || "",
         bio: developerData.bio || "",
         date_of_starting_working: developerData.date_of_starting_working || "",
+        daily_rate: developerData.daily_rate ?? undefined,
       });
     }
   }, [developerData, session]);
@@ -187,6 +187,32 @@ export default function ProfileComponent({
             value={form.date_of_starting_working}
             onChange={handleChange}
             required
+            disabled={isSubmitting}
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="daily_rate"
+            className="mb-1 block text-sm font-medium"
+          >
+            Daily Rate (USD)
+          </label>
+          <Input
+            id="daily_rate"
+            name="daily_rate"
+            type="number"
+            min={0}
+            step={1}
+            placeholder="Daily Rate"
+            value={form.daily_rate ?? ""}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                daily_rate:
+                  e.target.value === "" ? undefined : Number(e.target.value),
+              })
+            }
+            required={false}
             disabled={isSubmitting}
           />
         </div>

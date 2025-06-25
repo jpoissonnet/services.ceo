@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 
 const Page = async () => {
   const session = await auth();
-  return <ProfileComponent session={session}></ProfileComponent>;
+  return <ProfileComponent session={session} />;
 };
 
 export default Page;

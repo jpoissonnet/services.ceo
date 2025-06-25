@@ -5,7 +5,7 @@ import { db, developers } from "@/lib/schema";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { name, email, bio, date_of_starting_working } = body;
+  const { name, email, bio, date_of_starting_working, daily_rate } = body;
 
   if (!name || !email || !date_of_starting_working) {
     return NextResponse.json(
@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
     if (existing) {
       developer = await db
         .update(developers)
-        .set({ name, bio, date_of_starting_working })
+        .set({ name, bio, date_of_starting_working, daily_rate })
         .where(eq(developers.id, existing.id))
         .returning();
       developer = developer[0];
     } else {
       developer = await db
         .insert(developers)
-        .values({ name, email, bio, date_of_starting_working })
+        .values({ name, email, bio, date_of_starting_working, daily_rate })
         .returning();
       developer = developer[0];
     }

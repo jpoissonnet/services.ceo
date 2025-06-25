@@ -47,11 +47,15 @@ Answer as a JSON array of steps:
       }),
     ),
   });
+  console.log("👋 sending to ai");
   const result = await model.withStructuredOutput(stepSchema).invoke(prompt);
 
   console.log("👋 result", result);
   return new Response(JSON.stringify({ result }), {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "max-age=640",
+    },
   });
 };
 
