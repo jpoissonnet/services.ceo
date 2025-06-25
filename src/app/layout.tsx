@@ -24,16 +24,24 @@ const RootLayout = async ({ children }: PropsWithChildren) => {
                   services.ceo
                 </Link>
                 <Link
-                  href="/developers"
-                  className="text-muted-foreground hover:text-foreground text-sm font-medium"
+                  href={"/"}
+                  className={
+                    "text-muted-foreground hover:text-foreground text-sm font-medium"
+                  }
                 >
-                  Developers
+                  Home
                 </Link>
                 <Link
                   href="/services"
                   className="text-muted-foreground hover:text-foreground text-sm font-medium"
                 >
                   Services
+                </Link>
+                <Link
+                  href="/developers"
+                  className="text-muted-foreground hover:text-foreground text-sm font-medium"
+                >
+                  Developers
                 </Link>
               </nav>
               <div className="flex items-center gap-2">

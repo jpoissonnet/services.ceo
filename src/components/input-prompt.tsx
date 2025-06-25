@@ -1,12 +1,13 @@
 "use client";
 import { useMutation } from "@tanstack/react-query";
+import { Session } from "next-auth";
 import React, { ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 
-const InputPrompt = () => {
+const InputPrompt = ({ session }: { session: Session | null }) => {
   const [input, setInput] = useState("");
   const mutation = useMutation({
     mutationFn: async (question: string) => {
@@ -28,6 +29,7 @@ const InputPrompt = () => {
     description: string;
     estimatedTime: string;
     developer?: string[];
+    status?: string; // Add status to track completion
   }
   interface Developer {
     id: string;
@@ -38,7 +40,6 @@ const InputPrompt = () => {
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [devDetails, setDevDetails] = useState<Developer[]>([]);
   const [selectedDevId, setSelectedDevId] = useState<string>("");
-  const [clientId, setClientId] = useState<string>("");
   const [service, setService] = useState<null | Record<string, ReactNode>>(
     null,
   );
@@ -54,6 +55,11 @@ const InputPrompt = () => {
   };
 
   const handleStepClick = (step: Step) => {
+    // Don't open drawer for steps that already have a service created
+    if (step.status === "done" || step.status === "validated") {
+      return;
+    }
+
     setSelectedStep(step);
     setService(null);
     setSelectedDevId("");
@@ -62,37 +68,39 @@ const InputPrompt = () => {
 
   const createService = async () => {
     if (!selectedStep || !selectedDevId) return;
-    const res = await fetch("/api/service", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: selectedStep.step,
-        description: selectedStep.description,
-        duration: selectedStep.estimatedTime,
-        developerId: selectedDevId,
-        clientId: clientId || null, // Include clientId if available
-      }),
-    });
-    const data = await res.json();
-    setService(data.service);
-  };
+    try {
+      const res = await fetch("/api/service", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedStep.step,
+          description: selectedStep.description,
+          duration: selectedStep.estimatedTime,
+          developerId: selectedDevId,
+          clientId: session?.user.id ?? null,
+        }),
+      });
 
-  const validateService = async () => {
-    if (!service) return;
-    const res = await fetch("/api/service", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: service.id, status: "validated" }),
-    });
-    const data = await res.json();
-    setService(data.service);
+      if (res.ok) {
+        // Update step status in the UI to mark it as done
+        mutation.data.steps = mutation.data.steps.map((s: Step) =>
+          s.step === selectedStep.step ? { ...s, status: "done" } : s,
+        );
+
+        // Close the drawer after successfully creating a service
+        handleClose();
+      } else {
+        console.error("Failed to create service");
+      }
+    } catch (error) {
+      console.error("Error creating service:", error);
+    }
   };
 
   const handleClose = () => {
     setSelectedStep(null);
     setDevDetails([]);
     setSelectedDevId("");
-    setClientId("");
     setService(null);
   };
 
@@ -142,15 +150,36 @@ const InputPrompt = () => {
               <li
                 key={idx}
                 onClick={() => handleStepClick(step)}
-                className="group relative mb-10 ml-4 cursor-pointer"
+                className={`group relative mb-10 ml-4 ${
+                  step.status === "done" ? "cursor-default" : "cursor-pointer"
+                }`}
+                data-status={step.status}
               >
-                <span className="absolute top-4 -left-4 flex h-4 w-4 -translate-x-1/2 translate-y-1 items-center justify-center rounded-full border-2 border-gray-400 bg-white"></span>
-                <div className="group-hover:border-primary group-hover:bg-primary/5 relative flex flex-col gap-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all group-hover:shadow-lg">
-                  <div className="flex items-center justify-between font-semibold text-gray-800">
+                <span
+                  className={`absolute top-4 -left-4 flex h-4 w-4 -translate-x-1/2 translate-y-1 items-center justify-center rounded-full ${
+                    step.status === "done"
+                      ? "border-2 border-green-500 bg-green-200"
+                      : "border-2 border-gray-400 bg-white"
+                  }`}
+                ></span>
+                <div
+                  className={`relative flex flex-col gap-1 rounded-xl border ${
+                    step.status === "done"
+                      ? "border-green-200 bg-green-50"
+                      : "group-hover:border-primary group-hover:bg-primary/5 border-gray-200 bg-white group-hover:shadow-lg"
+                  } p-4 shadow-sm transition-all`}
+                >
+                  <div className="flex justify-between font-semibold text-gray-800">
                     {step.step}
-                    <span className="text-primary ml-2 transition-transform group-hover:translate-x-1">
-                      →
-                    </span>
+                    {step.status === "done" ? (
+                      <span className="text-sm font-medium text-green-500">
+                        ✅
+                      </span>
+                    ) : (
+                      <span className="text-primary ml-2 transition-transform group-hover:translate-x-1">
+                        →
+                      </span>
+                    )}
                   </div>
                   <div className="text-gray-600">{step.description}</div>
                   <div className="text-sm text-gray-500">
@@ -216,14 +245,7 @@ const InputPrompt = () => {
                   Save Service
                 </Button>
               )}
-              {service && (
-                <>
-                  <span>Status: {service.status}</span>
-                  {service.status !== "validated" && (
-                    <Button onClick={validateService}>Validate Service</Button>
-                  )}
-                </>
-              )}
+              {service && <span>Status: {service.status}</span>}
               <Button variant="outline" onClick={handleClose}>
                 Close
               </Button>

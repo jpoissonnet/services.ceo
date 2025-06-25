@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import InputPrompt from "@/components/input-prompt";
 import { buttonVariants } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata = {
@@ -34,6 +35,7 @@ export const metadata = {
   },
 };
 const HomePage = async () => {
+  const session = await auth();
   return (
     <>
       <main
@@ -43,7 +45,7 @@ const HomePage = async () => {
           <h1 className="text-center text-2xl font-bold">
             What do you need help with?
           </h1>
-          <InputPrompt />
+          <InputPrompt session={session} />
         </div>
       </main>
       <footer className="text-muted-foreground w-full text-center text-sm">

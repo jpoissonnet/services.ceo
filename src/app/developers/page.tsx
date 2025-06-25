@@ -18,12 +18,13 @@ export default async function DevelopersPage() {
           <div key={dev.id} className="bg-card rounded-lg p-6 shadow">
             <h2 className="text-lg font-semibold">{dev.name}</h2>
             <p className="text-card-foreground mt-2 text-sm">{dev.bio}</p>
-            <p className="mt-4 text-sm">Email: {dev.email}</p>
-            <p className="text-xs">
-              {new Date().getFullYear() -
-                new Date(dev.date_of_starting_working).getFullYear()}
-              &nbsp;years of xp
-            </p>
+            {dev.date_of_starting_working ? (
+              <p className="text-xs">
+                {new Date().getFullYear() -
+                  new Date(dev.date_of_starting_working).getFullYear()}
+                &nbsp;years of xp
+              </p>
+            ) : null}
           </div>
         ))}
       </div>
